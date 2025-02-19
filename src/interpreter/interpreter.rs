@@ -99,6 +99,19 @@ pub fn execute(stmt: Statement, env: &Environment<EnvValue>) -> Result<ControlFl
             let exp_value = eval(*exp, &new_env)?;
             Ok(ControlFlow::Return(exp_value))
         }
+
+        Statement::Print(input) => {
+            let value = eval(input, &new_env)?;
+            match value {
+                EnvValue::Exp(Expression::CString(s)) => {println!("{}", s); Ok(ControlFlow::Continue(new_env))},
+                EnvValue::Exp(Expression::CInt(i)) => {println!("{}", i); Ok(ControlFlow::Continue(new_env))},
+                EnvValue::Exp(Expression::CReal(f)) => {println!("{:.16}", f); Ok(ControlFlow::Continue(new_env))},
+                EnvValue::Exp(Expression::CTrue) => {println!("True"); Ok(ControlFlow::Continue(new_env))},
+                EnvValue::Exp(Expression::CFalse) => {println!("False"); Ok(ControlFlow::Continue(new_env))},
+                _=>Err(String::from("Print function does not support this format"))
+            }
+        }
+
         Statement::WriteToFile(file_path_exp, content_exp) => {
             let file_path_value = eval(*file_path_exp, &new_env)?;
             let content_value = eval(*content_exp, &new_env)?;
@@ -487,6 +500,19 @@ mod tests {
     use crate::ir::ast::Statement::*;
     use crate::ir::ast::Type::*;
     use approx::relative_eq;
+
+    #[test]
+    fn eval_print() {
+        let env: Environment<EnvValue> = Environment::new();
+
+        let print_input = Expression::Add(Box::new(CInt(50)), Box::new(CInt(15)));
+        let print_stmt=Statement::Print(print_input);
+
+        match execute(print_stmt, &env) {
+            Ok(_) => println!("Print successful"),
+            Err(e) => println!("Execution failed: {}", e),
+        }
+    }
 
     #[test]
     fn eval_constant() {
